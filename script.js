@@ -10,6 +10,17 @@ const clearAllBtn = document.querySelector('#clear-all');
 
 let notes = [];
 
+// ===== Count message =====
+function updateCount() {
+  if (notes.length === 0) {
+    noteCount.textContent = 'You have no notes yet.';
+  } else if (notes.length === 1) {
+    noteCount.textContent = 'You have 1 note.';
+  } else {
+    noteCount.textContent = 'You have ' + notes.length + ' notes.';
+  }
+}
+
 // ===== Render =====
 function render() {
   notesList.textContent = '';
@@ -36,11 +47,16 @@ function render() {
     del.type = 'button';
     del.className = 'delete-btn';
     del.textContent = 'Delete';
+    del.addEventListener('click', function () {
+      deleteNote(note.id);
+    });
 
     meta.append(category, date, del);
     li.append(text, meta);
     notesList.appendChild(li);
   });
+
+  updateCount();
 }
 
 // ===== Add =====
@@ -48,6 +64,16 @@ function addNote(event) {
   event.preventDefault();
   const text = noteInput.value.trim();
 
+  if (text === '') {
+    errorMessage.textContent = 'Please type a note first.';
+    return;
+  }
+  if (text.length > 200) {
+    errorMessage.textContent = 'Notes must be 200 characters or fewer.';
+    return;
+  }
+
+  errorMessage.textContent = '';
   notes.push({
     id: Date.now(),
     text: text,
@@ -55,6 +81,14 @@ function addNote(event) {
     createdAt: new Date().toLocaleString()
   });
   noteInput.value = '';
+  render();
+}
+
+// ===== Delete =====
+function deleteNote(id) {
+  notes = notes.filter(function (note) {
+    return note.id !== id;
+  });
   render();
 }
 

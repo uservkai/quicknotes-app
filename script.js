@@ -8,7 +8,22 @@ const noteCount = document.querySelector('#note-count');
 const errorMessage = document.querySelector('#error-message');
 const clearAllBtn = document.querySelector('#clear-all');
 
+const STORAGE_KEY = 'quicknotes-notes';
 let notes = [];
+
+// ===== Persistence =====
+function saveNotes() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(notes));
+}
+
+function loadNotes() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
+    notes = Array.isArray(saved) ? saved : [];
+  } catch (e) {
+    notes = [];
+  }
+}
 
 // ===== Count message =====
 function updateCount() {
@@ -24,8 +39,12 @@ function updateCount() {
 // ===== Render =====
 function render() {
   notesList.textContent = '';
+  const term = searchInput.value.trim().toLowerCase();
+  const visible = notes.filter(function (note) {
+    return note.text.toLowerCase().includes(term);
+  });
 
-  notes.forEach(function (note) {
+  visible.forEach(function (note) {
     const li = document.createElement('li');
     li.className = 'note-card category-' + note.category.toLowerCase();
 
@@ -56,7 +75,15 @@ function render() {
     notesList.appendChild(li);
   });
 
+  if (notes.length > 0 && visible.length === 0) {
+    const msg = document.createElement('li');
+    msg.className = 'no-results';
+    msg.textContent = 'No notes match your search.';
+    notesList.appendChild(msg);
+  }
+
   updateCount();
+  clearAllBtn.hidden = notes.length === 0;
 }
 
 // ===== Add =====
@@ -80,6 +107,7 @@ function addNote(event) {
     category: categorySelect.value,
     createdAt: new Date().toLocaleString()
   });
+  saveNotes();
   noteInput.value = '';
   render();
 }
@@ -89,9 +117,23 @@ function deleteNote(id) {
   notes = notes.filter(function (note) {
     return note.id !== id;
   });
+  saveNotes();
   render();
+}
+
+// ===== Clear all =====
+function clearAll() {
+  if (confirm('Delete all notes?')) {
+    notes = [];
+    saveNotes();
+    render();
+  }
 }
 
 // ===== Events and start-up =====
 form.addEventListener('submit', addNote);
+searchInput.addEventListener('input', render);
+clearAllBtn.addEventListener('click', clearAll);
+
+loadNotes();
 render();
